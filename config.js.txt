@@ -1,6 +1,6 @@
 // Configuration de l'application
 const CONFIG = {
-  API_BASE_URL: "http://127.0.0.1:8000",
+  API_BASE_URL: "",
   API_PREFIX: "/api",
 
   HEALTH_CHECK_INTERVAL: 30000,
@@ -66,5 +66,6 @@ window.MESSAGES = MESSAGES;
 window.CALL_STATUS = CALL_STATUS;
 window.ENDPOINTS = ENDPOINTS;
 window.STATUS_COLORS = STATUS_COLORS;
+
 
 console.log("✓ Configuration chargée avec support DTMF");
