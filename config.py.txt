@@ -1,4 +1,4 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -19,4 +19,5 @@ API_TITLE = "API ARI FastAPI avec DTMF"
 API_DESCRIPTION = "Backend FastAPI connecté à Asterisk ARI et MySQL avec support DTMF"
 
 API_VERSION = "2.0.0"
+
 
