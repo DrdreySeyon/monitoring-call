@@ -397,4 +397,5 @@ window.deleteScenario = async function (id) {
 window.saveScenario = async function (event) {
   event?.preventDefault?.();
   await window.Scenarios?.submitForm();
+
 };
