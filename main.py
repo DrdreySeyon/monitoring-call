@@ -725,11 +725,7 @@ async def call_from_scenario(scenario_id: int, db: Session = Depends(get_db)):
             call_time_s=db_scenario.call_time_s,
             dtmf=db_scenario.dtmf,
             time_s_before_dtmf=db_scenario.time_s_before_dtmf,
-            time_ms_between_dtmf=db_scenario.time_ms_between_dtmf,
-            scenario_id=db_scenario.id,
-            scenario_name=db_scenario.name,
-            scenario_keyword=db_scenario.keyword,
-            scenario_category=db_scenario.category
+            time_ms_between_dtmf=db_scenario.time_ms_between_dtmf
         )
 
         return {
@@ -845,4 +841,5 @@ if __name__ == "__main__":
         reload=True,
         log_level=settings.log_level.lower()
     )
+
 
