@@ -262,13 +262,13 @@ def get_calls_history(
     query = db.query(Call)
 
     if caller:
-        query = query.filter(Call.caller == caller)
+        query = query.filter(Call.caller.ilike(f"%{caller.strip()}%"))
     if callee:
-        query = query.filter(Call.callee == callee)
+        query = query.filter(Call.callee.ilike(f"%{callee.strip()}%"))
     if category:
-        query = query.filter(Call.scenario_category == category)
+        query = query.filter(Call.scenario_category.ilike(f"%{category.strip()}%"))
     if status:
-        query = query.filter(Call.status == status)
+        query = query.filter(Call.status == status.strip())
 
     total = query.count()
     query = query.order_by(Call.created_at.desc())
@@ -331,7 +331,6 @@ def get_calls_history(
         "has_prev": page > 1,
         "items": items
     }
-
 
 @app.get(f"{settings.api_prefix}/calls/{{call_id}}")
 def get_call_details(call_id: int, db: Session = Depends(get_db)):
@@ -728,6 +727,15 @@ async def call_from_scenario(scenario_id: int, db: Session = Depends(get_db)):
             time_ms_between_dtmf=db_scenario.time_ms_between_dtmf
         )
 
+        # enrichissement historique
+        call_row.scenario_id = db_scenario.id
+        call_row.scenario_name = db_scenario.name
+        call_row.scenario_keyword = db_scenario.keyword
+        call_row.scenario_category = db_scenario.category
+
+        db.commit()
+        db.refresh(call_row)
+
         return {
             "scenario": {
                 "id": db_scenario.id,
@@ -743,9 +751,14 @@ async def call_from_scenario(scenario_id: int, db: Session = Depends(get_db)):
                 "callee": call_row.callee,
                 "trunk": call_row.trunk,
                 "call_time_s": call_row.call_time_s,
+                "duration": call_row.duration,
                 "dtmf": call_row.dtmf,
                 "time_s_before_dtmf": call_row.time_s_before_dtmf,
                 "time_ms_between_dtmf": call_row.time_ms_between_dtmf,
+                "scenario_id": call_row.scenario_id,
+                "scenario_name": call_row.scenario_name,
+                "scenario_keyword": call_row.scenario_keyword,
+                "scenario_category": call_row.scenario_category,
                 "created_at": call_row.created_at.isoformat() if call_row.created_at else None
             },
             "ari_response": ari_response,
@@ -756,12 +769,12 @@ async def call_from_scenario(scenario_id: int, db: Session = Depends(get_db)):
         raise
     except Exception as exc:
         logger.error(
-        f"Erreur lors du lancement d'appel depuis le scénario {scenario_id}: {exc}\n{traceback.format_exc()}"
-    )
+            f"Erreur lors du lancement d'appel depuis le scénario {scenario_id}: {exc}\n{traceback.format_exc()}"
+        )
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors du lancement de l'appel: {str(exc)}"
-    )
+        )
 
 
 # ============================================================
@@ -841,5 +854,6 @@ if __name__ == "__main__":
         reload=True,
         log_level=settings.log_level.lower()
     )
+
 
 
