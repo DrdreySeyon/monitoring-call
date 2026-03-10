@@ -2,9 +2,10 @@ import logging
 import traceback
 from datetime import datetime
 from typing import Optional
+import json
 
-from fastapi import FastAPI, HTTPException, Depends, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Depends, Request, UploadFile, File
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -401,6 +402,130 @@ def get_scenarios(page: Optional[int] = None, db: Session = Depends(get_db)):
     return {
         "items": rows
     }
+
+
+@app.get(f"{settings.api_prefix}/scenarios/export")
+def export_scenarios(db: Session = Depends(get_db)):
+    rows = db.query(Scenario).order_by(Scenario.created_at.desc()).all()
+
+    payload = {
+        "exported_at": datetime.utcnow().isoformat(),
+        "count": len(rows),
+        "scenarios": [
+            {
+                "name": s.name,
+                "keyword": s.keyword,
+                "category": s.category,
+                "caller": s.caller,
+                "callee": s.callee,
+                "trunk": s.trunk,
+                "call_time_s": s.call_time_s,
+                "dtmf": s.dtmf,
+                "time_s_before_dtmf": s.time_s_before_dtmf,
+                "time_ms_between_dtmf": s.time_ms_between_dtmf,
+                "frequency": s.frequency,
+                "active": bool(s.active),
+                "created_at": s.created_at.isoformat() if s.created_at else None
+            }
+            for s in rows
+        ]
+    }
+
+    content = json.dumps(payload, ensure_ascii=False, indent=2)
+
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": 'attachment; filename="scenarios_export.json"'
+        }
+    )
+
+
+@app.post(f"{settings.api_prefix}/scenarios/import")
+async def import_scenarios(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    try:
+        raw = await file.read()
+        data = json.loads(raw.decode("utf-8"))
+
+        scenarios_data = data.get("scenarios") if isinstance(data, dict) else data
+
+        if not isinstance(scenarios_data, list):
+            raise HTTPException(status_code=400, detail="Format JSON invalide")
+
+        created = 0
+        skipped = 0
+        errors = []
+
+        for idx, item in enumerate(scenarios_data, start=1):
+            try:
+                if not isinstance(item, dict):
+                    errors.append(f"Ligne {idx}: objet invalide")
+                    continue
+
+                name = item.get("name")
+                keyword = item.get("keyword")
+                category = item.get("category")
+                caller = item.get("caller")
+                callee = item.get("callee")
+                trunk = item.get("trunk")
+
+                if not name or not keyword or not category or not caller or not callee or not trunk:
+                    errors.append(f"Ligne {idx}: champs obligatoires manquants")
+                    continue
+
+                existing = db.query(Scenario).filter(
+                    Scenario.name == name,
+                    Scenario.caller == caller,
+                    Scenario.callee == callee,
+                    Scenario.trunk == trunk
+                ).first()
+
+                if existing:
+                    skipped += 1
+                    continue
+
+                db_scenario = Scenario(
+                    name=name,
+                    keyword=keyword,
+                    category=category,
+                    caller=caller,
+                    callee=callee,
+                    trunk=trunk,
+                    call_time_s=item.get("call_time_s", 30),
+                    dtmf=item.get("dtmf"),
+                    time_s_before_dtmf=item.get("time_s_before_dtmf"),
+                    time_ms_between_dtmf=item.get("time_ms_between_dtmf", 3000),
+                    frequency=item.get("frequency"),
+                    active=1 if item.get("active", True) else 0
+                )
+
+                db.add(db_scenario)
+                created += 1
+
+            except Exception as exc:
+                errors.append(f"Ligne {idx}: {str(exc)}")
+
+        db.commit()
+
+        return {
+            "message": "Import terminé",
+            "created": created,
+            "skipped": skipped,
+            "errors": errors
+        }
+
+    except HTTPException:
+        raise
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Fichier JSON invalide")
+    except Exception as exc:
+        db.rollback()
+        logger.error(f"Erreur import scénarios: {exc}")
+        raise HTTPException(status_code=500, detail="Erreur lors de l'import")
 
 
 @app.post(f"{settings.api_prefix}/scenarios")
