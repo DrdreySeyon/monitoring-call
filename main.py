@@ -759,8 +759,13 @@ async def call_from_scenario(scenario_id: int, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as exc:
-        logger.error(f"Erreur lors du lancement d'appel depuis le scénario {scenario_id}: {exc}")
-        raise HTTPException(status_code=500, detail="Erreur lors du lancement de l'appel")
+        logger.error(
+        f"Erreur lors du lancement d'appel depuis le scénario {scenario_id}: {exc}\n{traceback.format_exc()}"
+    )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors du lancement de l'appel: {str(exc)}"
+    )
 
 
 # ============================================================
@@ -840,3 +845,4 @@ if __name__ == "__main__":
         reload=True,
         log_level=settings.log_level.lower()
     )
+
