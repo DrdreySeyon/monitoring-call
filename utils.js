@@ -272,6 +272,81 @@ const Utils = {
   },
 
   /**
+   * Télécharge un fichier depuis une URL
+   */
+  async downloadFile(url, filename = "download.json") {
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          }
+        } catch {
+          // ignore
+        }
+        throw new Error(errorMessage);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(blobUrl);
+      return true;
+    } catch (error) {
+      console.error("Erreur téléchargement:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Upload d'un fichier en multipart/form-data
+   */
+  async uploadFile(endpoint, file, fieldName = "file") {
+    try {
+      const formData = new FormData();
+      formData.append(fieldName, file);
+
+      const response = await fetch(this.buildApiUrl(endpoint), {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          }
+        } catch {
+          // ignore JSON parse error
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      return { success: true, data, response };
+    } catch (error) {
+      console.error("Erreur upload fichier:", error);
+      return {
+        success: false,
+        error: error.message || "Erreur upload fichier"
+      };
+    }
+  },
+
+  /**
    * Toast notification
    */
   showToast(message, type = "info", duration = 3000) {
