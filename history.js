@@ -28,6 +28,25 @@ const History = {
   },
 
   bindEvents() {
+    const inputs = [
+      "history-caller",
+      "history-callee",
+      "history-category"
+    ];
+
+    inputs.forEach(id => {
+
+      const el = document.getElementById(id);
+
+      el?.addEventListener(
+        "input",
+        Utils.debounce(async ()=>{
+          this.currentPage = 1;
+          await this.load();
+        },500)
+      );
+
+    });
 
     document.getElementById("load-history")?.addEventListener("click", async () => {
       this.currentPage = 1;
@@ -289,3 +308,4 @@ window.showChannel = async function (channelId) {
   await Utils.copyToClipboard(channelId);
 
 };
+
