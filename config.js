@@ -49,8 +49,8 @@ const ENDPOINTS = {
   CALLS_HISTORY: "/calls/history",
   CALLS_STATS: "/calls/stats",
   SCENARIOS: "/scenarios",
-  SCENARIOS: "/scenarios/export",
-  SCENARIOS: "/scenarios/import",
+  SCENARIOS_EXPORT: "/scenarios/export",
+  SCENARIOS_IMPORT: "/scenarios/import",
   SYSTEM_INFO: "/system/info",
   SYSTEM_METRICS: "/system/metrics"
 };
@@ -71,4 +71,5 @@ window.STATUS_COLORS = STATUS_COLORS;
 
 
 console.log("✓ Configuration chargée avec support DTMF");
+
 
