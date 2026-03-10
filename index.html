@@ -34,6 +34,11 @@
             <h2>Scénarios d’appels planifiés avec support DTMF</h2>
             <span id="scenario-count" class="badge">0 scénario(x)</span>
           </div>
+            <div class="topbar-actions">
+              <button class="btn btn-secondary" id="export-scenarios-btn">Exporter</button>
+              <button class="btn btn-secondary" id="import-scenarios-btn">Importer</button>
+              <input type="file" id="import-scenarios-file" accept=".json,application/json" hidden>
+            </div>
         </div>
 
         <div class="table-card">
@@ -276,3 +281,4 @@
   <script src="./assets/js/app.js"></script>
 </body>
 </html>
+
