@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException, Depends, Request, UploadFile, File
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from scheduler import start_scheduler #newwww
 
 from config import settings, API_TITLE, API_DESCRIPTION, API_VERSION
 from database import get_db, create_tables, test_database_connection
@@ -854,6 +855,7 @@ if __name__ == "__main__":
         reload=True,
         log_level=settings.log_level.lower()
     )
+
 
 
 
