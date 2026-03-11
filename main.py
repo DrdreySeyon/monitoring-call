@@ -341,6 +341,40 @@ def get_calls_history(
         "items": items
     }
 
+@app.get(f"{settings.api_prefix}/calls/history/export")
+def export_calls_history(
+    caller: Optional[str] = None,
+    callee: Optional[str] = None,
+    category: Optional[str] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Call)
+
+    if caller:
+        query = query.filter(Call.caller.ilike(f"%{caller.strip()}%"))
+    if callee:
+        query = query.filter(Call.callee.ilike(f"%{callee.strip()}%"))
+    if category:
+        query = query.filter(Call.scenario_category.ilike(f"%{category.strip()}%"))
+    if status:
+        query = query.filter(Call.status == status.strip())
+
+    rows = query.all()
+
+    # Préparez les données pour l'export
+    data = [{"id": call.id, "caller": call.caller, "callee": call.callee, "status": call.status, "created_at": call.created_at.isoformat() if call.created_at else None} for call in rows]
+
+    content = json.dumps(data, ensure_ascii=False, indent=2)
+
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": 'attachment; filename="calls_history_export.json"'
+        }
+    )
+
 @app.get(f"{settings.api_prefix}/calls/{{call_id}}")
 def get_call_details(call_id: int, db: Session = Depends(get_db)):
     call = db.query(Call).filter(Call.id == call_id).first()
@@ -863,6 +897,7 @@ if __name__ == "__main__":
         reload=True,
         log_level=settings.log_level.lower()
     )
+
 
 
 
