@@ -68,6 +68,26 @@ const History = {
       this.currentPage = 1;
       await this.load();
     });
+
+    document.getElementById("export-history")?.addEventListener("click", async () => {
+      const query = this.buildQueryString();
+      const response = await fetch(`${ENDPOINTS.CALLS_HISTORY}/export?${query}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        Utils.showToast("Erreur lors de l'exportation de l'historique", "error");
+        return;
+      }
+
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "calls_history_export.json";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
   },
 
   getFilters() {
@@ -236,3 +256,4 @@ window.showChannel = async function (channelId) {
   }
   await Utils.copyToClipboard(channelId);
 };
+
