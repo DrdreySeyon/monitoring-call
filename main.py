@@ -70,6 +70,14 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 # GENERAL
 # ============================================================
 
+@app.on_event("startup")
+def startup_event():
+    logger.info("Démarrage du scheduler...")
+    start_scheduler()  # Démarre les tâches programmées
+    logger.info("Scheduler démarré avec succès.")
+
+
+
 @app.get(f"{settings.api_prefix}")
 def api_root():
     return {
@@ -855,6 +863,7 @@ if __name__ == "__main__":
         reload=True,
         log_level=settings.log_level.lower()
     )
+
 
 
 
