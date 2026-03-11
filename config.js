@@ -47,6 +47,7 @@ const ENDPOINTS = {
   HEALTH_DETAILED: "/health/detailed",
   CALLS: "/calls",
   CALLS_HISTORY: "/calls/history",
+  CALLS_HISTORY_EXPORT: "/calls/history/export",
   CALLS_STATS: "/calls/stats",
   SCENARIOS: "/scenarios",
   SCENARIOS_EXPORT: "/scenarios/export",
@@ -71,5 +72,6 @@ window.STATUS_COLORS = STATUS_COLORS;
 
 
 console.log("✓ Configuration chargée avec support DTMF");
+
 
 
