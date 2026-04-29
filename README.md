@@ -40,6 +40,12 @@ async def call_from_scenario(scenario_id: int, db: Session = Depends(get_db)):
                 "caller": call_row.caller,
 
 
+logger.info(f"ARI URL = {settings.ari_url}/channels")
+logger.info(f"ARI endpoint = {endpoint}")
+logger.info(f"ARI params = {params}")
+logger.info(f"ARI payload = {payload}")
+
+
 
 e problème vient sûrement de l’endpoint/trunk.
 
