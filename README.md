@@ -38,3 +38,48 @@ async def call_from_scenario(scenario_id: int, db: Session = Depends(get_db)):
                 "channel_id": call_row.channel_id,
                 "status": call_row.status,
                 "caller": call_row.caller,
+
+
+
+e problème vient sûrement de l’endpoint/trunk.
+
+Dans ton ari.py, tu construis :
+
+endpoint = f"PJSIP/{callee}@{trunk}"
+
+Mais avec PJSIP, Asterisk attend souvent plutôt :
+
+endpoint = f"PJSIP/{trunk}/sip:{callee}@IP_DU_TRUNK"
+
+ou parfois :
+
+endpoint = f"PJSIP/{trunk}/{callee}"
+
+À tester directement dans le terminal Asterisk :
+
+curl -u ari_user:sA7LuZ_t34 -X POST "http://sldcfrbiatk1076:8088/ari/channels?endpoint=PJSIP/TON_NUMERO@TRUNK_SBC_SFR_VEGA&extension=TON_NUMERO&context=recording&priority=1&callerId=TON_CALLER"
+
+Si ça fait 404, teste :
+
+curl -u ari_user:sA7LuZ_t34 -X POST "http://sldcfrbiatk1076:8088/ari/channels?endpoint=PJSIP/TRUNK_SBC_SFR_VEGA/sip:TON_NUMERO@100.76.143.56:5060&extension=TON_NUMERO&context=recording&priority=1&callerId=TON_CALLER"
+
+D’après ton écran, pour TRUNK_SBC_SFR_VEGA, l’adresse est :
+
+100.76.143.56:5060
+
+Si le 2e test marche, alors dans ari.py, il faut remplacer :
+
+endpoint = f"PJSIP/{callee}@{trunk}"
+
+par :
+
+trunk_hosts = {
+    "TRUNK_SBC_SFR_VEGA": "100.76.143.56:5060",
+    "TRUNK_SBC_SFR_SIRIUS": "100.76.143.48:5060",
+    "TRUNK_SBC_OBS_VEGA": "100.76.143.57:5060",
+    "TRUNK_SBC_OBS_SIRIUS": "100.76.143.49:5060",
+    "TRUNK_SBC_ODIGO_VEGA": "100.76.143.58:5060",
+    "TRUNK_SBC_ODIGO_SIRIUS": "100.76.143.50:5060",
+}
+
+endpoint = f"PJSIP/{trunk}/sip:{callee}@{trunk_hosts[trunk]}"
