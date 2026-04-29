@@ -83,3 +83,10 @@ trunk_hosts = {
 }
 
 endpoint = f"PJSIP/{trunk}/sip:{callee}@{trunk_hosts[trunk]}"
+
+
+
+logger.info(f"ARI URL = {settings.ari_url}/channels")
+logger.info(f"ARI endpoint = {endpoint}")
+logger.info(f"ARI params = {params}")
+logger.info(f"ARI payload = {payload}")
