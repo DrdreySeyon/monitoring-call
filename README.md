@@ -96,3 +96,10 @@ logger.info(f"ARI URL = {settings.ari_url}/channels")
 logger.info(f"ARI endpoint = {endpoint}")
 logger.info(f"ARI params = {params}")
 logger.info(f"ARI payload = {payload}")
+
+
+
+grep -R "asterisk/ari" -n /srv/api/asterisk
+grep -R "ari_url" -n /srv/api/asterisk
+grep -R "ARI_URL" -n /srv/api/asterisk
+cat /srv/api/asterisk/.env
