@@ -103,3 +103,11 @@ grep -R "asterisk/ari" -n /srv/api/asterisk
 grep -R "ari_url" -n /srv/api/asterisk
 grep -R "ARI_URL" -n /srv/api/asterisk
 cat /srv/api/asterisk/.env
+
+
+
+
+mysql -h asterisk-bdd-biatk.mycloud.intrabpce.fr \
+-u biatkadmin \
+-P 15100 \
+-p
