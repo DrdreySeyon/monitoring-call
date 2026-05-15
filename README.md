@@ -124,3 +124,137 @@ journalctl --user -u fastapi_app.service -n 100 --no-pager
 from config import Settings
 s = Settings()
 print(s.database_url)
+
+
+
+
+Alors le problème vient probablement d’autre chose dans l’URL SQLAlchemy.
+
+Sur ta capture, je vois :
+
+mysql+pymysql://biatkadmin:uhHLBa5LMJv2YLf0Bp_9@asterisk-bdd-biatk.mycloud.intrabpce.fr:15000/asterisk
+
+Cette syntaxe semble correcte.
+
+MAIS l’erreur :
+
+Can't connect to MySQL server
+[Errno 111] Connection refused
+
+signifie maintenant que :
+
+* l’URL est parsée correctement ✅
+* SQLAlchemy fonctionne ✅
+* pymysql fonctionne ✅
+* mais FastAPI n’arrive toujours pas à joindre MySQL.
+
+⸻
+
+Pourtant ton test mysql CLI marche
+
+Tu as montré que :
+
+mysql -h ... -P 15000
+
+fonctionne.
+
+Donc le problème est probablement :
+
+* utilisateur différent
+* mot de passe différent
+* environnement différent
+* ou résolution DNS différente dans Python.
+
+⸻
+
+Vérification IMMÉDIATE
+
+Teste exactement depuis le venv Python utilisé par FastAPI.
+
+Fais :
+
+source /srv/api/asterisk/env/bin/activate
+
+Puis :
+
+python3
+
+Puis :
+
+import pymysql
+conn = pymysql.connect(
+    host="asterisk-bdd-biatk.mycloud.intrabpce.fr",
+    port=15000,
+    user="biatkadmin",
+    password="TON_MDP",
+    database="asterisk"
+)
+print("OK")
+
+⸻
+
+Résultats possibles
+
+Si ça affiche :
+
+OK
+
+Alors :
+
+* MySQL fonctionne
+* problème dans FastAPI/config/env
+
+⸻
+
+Si ça échoue encore
+
+Alors :
+
+* mauvais mot de passe
+* mauvaise DB
+* firewall
+* host différent
+
+⸻
+
+Autre point important
+
+Tu utilises :
+
+/asterisk
+
+comme nom de DB.
+
+Tu dois vérifier qu’elle existe réellement :
+
+Dans MySQL :
+
+SHOW DATABASES;
+
+et confirme que :
+
+* asterisk existe exactement
+* sans majuscule différente
+
+⸻
+
+Vérifie aussi la résolution DNS Python
+
+Dans Python :
+
+import socket
+socket.gethostbyname("asterisk-bdd-biatk.mycloud.intrabpce.fr")
+
+Si ça échoue → problème DNS côté Python/service.
+
+⸻
+
+Très probable maintenant
+
+Je pense que :
+
+* le nom de DB est faux
+    OU
+* le service FastAPI n’utilise pas la même config que celle modifiée.
+
+Car l’erreur SQLAlchemy actuelle n’est plus une erreur de parsing, mais une vraie erreur réseau/connexion.
