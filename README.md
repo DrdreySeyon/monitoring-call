@@ -1,4 +1,4 @@
-
+#
 
 
 # monitoring-call
@@ -120,3 +120,7 @@ database_url = "mysql+pymysql://biatkadmin:MOTDEPASSE@asterisk-bdd-biatk.mycloud
 
 
 journalctl --user -u fastapi_app.service -n 100 --no-pager
+
+from config import Settings
+s = Settings()
+print(s.database_url)
