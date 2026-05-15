@@ -1,3 +1,6 @@
+
+
+
 # monitoring-call
 monitoring-call
 Pour rajouter le mot cle à l'appel aller dans main.py perfomcall
@@ -111,6 +114,9 @@ mysql -h asterisk-bdd-biatk.mycloud.intrabpce.fr \
 -u biatkadmin \
 -P 15100 \
 -p
+
+database_url = "mysql+pymysql://biatkadmin:MOTDEPASSE@asterisk-bdd-biatk.mycloud.intrabpce.fr:15000/NOM_BDD"
+
 
 
 journalctl --user -u fastapi_app.service -n 100 --no-pager
