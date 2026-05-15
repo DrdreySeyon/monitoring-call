@@ -111,3 +111,6 @@ mysql -h asterisk-bdd-biatk.mycloud.intrabpce.fr \
 -u biatkadmin \
 -P 15100 \
 -p
+
+
+journalctl --user -u fastapi_app.service -n 100 --no-pager
