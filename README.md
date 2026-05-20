@@ -258,3 +258,159 @@ Je pense que :
 * le service FastAPI n’utilise pas la même config que celle modifiée.
 
 Car l’erreur SQLAlchemy actuelle n’est plus une erreur de parsing, mais une vraie erreur réseau/connexion.
+
+
+
+
+
+
+
+
+
+
+
+Ton journalctl confirme encore exactement la même erreur :
+
+Can't connect to MySQL server
+[Errno 111] Connection refused
+
+Donc maintenant il faut arrêter de regarder FastAPI :
+le problème est purement la connexion SQLAlchemy/MySQL utilisée PAR LE SERVICE.
+
+Et vu que :
+
+* le client mysql -h ... -P 15000 fonctionne ✅
+* mais FastAPI échoue ❌
+
+alors il y a 3 causes très probables restantes.
+
+⸻
+
+1. Tu n’utilises pas le même mot de passe
+
+Le plus probable.
+
+Le client MySQL fonctionne car tu tapes peut-être le bon mot de passe manuellement.
+
+Mais dans config.py, il peut y avoir :
+
+* une faute
+* un caractère oublié
+* un caractère spécial non échappé
+* un espace caché
+
+⸻
+
+Test définitif
+
+Fais EXACTEMENT ça dans le même venv que FastAPI :
+
+source /srv/api/asterisk/env/bin/activate
+python3
+
+Puis colle :
+
+import pymysql
+conn = pymysql.connect(
+    host="asterisk-bdd-biatk.mycloud.intrabpce.fr",
+    port=15000,
+    user="biatkadmin",
+    password="LE_MÊME_MDP_QUE_CONFIGPY",
+    database="asterisk"
+)
+print("MYSQL OK")
+
+⸻
+
+Résultat attendu
+
+Si ça marche :
+
+MYSQL OK
+
+Alors :
+
+* la config FastAPI n’est pas celle utilisée
+    OU
+* une variable .env écrase config.py
+
+⸻
+
+2. TON .env écrase la config
+
+Sur ta capture je vois :
+
+class Config:
+    env_file = ".env"
+
+Donc même si tu modifies config.py,
+Pydantic peut charger les valeurs du .env.
+
+Et le .env peut encore contenir :
+
+15100
+
+⸻
+
+Vérifie IMMÉDIATEMENT
+
+cat /srv/api/asterisk/.env
+
+Cherche :
+
+* DATABASE_URL
+* MYSQL_PORT
+* 15100
+
+⸻
+
+Très probable
+
+Je pense que ton .env contient encore :
+
+15100
+
+et écrase ton config.py.
+
+⸻
+
+3. Vérifie ce que FastAPI lit réellement
+
+Dans Python :
+
+source /srv/api/asterisk/env/bin/activate
+python3
+
+Puis :
+
+from config import settings
+print(settings.database_url)
+
+C’est LA commande clé.
+
+Tu verras :
+
+* soit 15000
+* soit 15100
+
+⸻
+
+Si tu vois encore 15100
+
+Alors le .env écrase tout.
+
+Corrige le .env.
+
+⸻
+
+Ensuite
+
+systemctl --user restart fastapi_app.service
+
+Puis :
+
+systemctl --user status fastapi_app.service
+
+Tu devrais enfin voir :
+
+active (running)
