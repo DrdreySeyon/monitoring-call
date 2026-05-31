@@ -414,3 +414,28 @@ systemctl --user status fastapi_app.service
 Tu devrais enfin voir :
 
 active (running)
+
+
+
+a remplir demain :
+
+
+URL ARI UAT : exemple http://x.x.x.x:8088/ari ou chemin exact
+Identifiant ARI et mot de passe, si tu peux les mettre ici ou avec des placeholders
+Contexte Asterisk utilisé pour les appels : exemple recording
+Format endpoint attendu : exemple PJSIP/{callee}@{trunk}
+Base UAT : type, host, port, nom DB, user, mot de passe ou placeholders
+Nom exact de la table calls en UAT si différent
+Colonnes exactes disponibles dans calls, surtout :
+id
+channel_id
+caller
+callee
+status
+vosk_status
+transcription
+created_at
+Valeurs réelles possibles de vosk_status : valid, invalid, pending, error, ou autres libellés
+Comment le traitement Vosk retrouve l’appel : par id, channel_id, uniqueid, linkedid, autre ?
+Chemins front/prod attendus : /assets/..., sous-dossier, reverse proxy, etc.
+Contraintes réseau : API et front même VM ou séparés, ports ouverts, URL publique/interne
