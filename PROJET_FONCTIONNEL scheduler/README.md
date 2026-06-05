@@ -1,5 +1,5 @@
 #
-
+Gerer le statut reel de l'appel si il est decroche ou pas ( cdr ) et rajouter la cause des trunks bien ecrit. Lire la valeur dans la base dans le hangup_cause et apres remonte l'erreur en fonction du code retour de l'appel recuperer dans le hangup_cause et afficher cela dans l'historique dans erreur dans historique
 
 # monitoring-call
 monitoring-call
