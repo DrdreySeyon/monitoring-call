@@ -14,7 +14,7 @@ async def call_from_scenario(scenario_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Le scénario est inactif")
 
     try:
-        call_row, ari_response = perform_call(
+        call_row, ari_response = perform_call( 
             db=db,
             caller=db_scenario.caller,
             callee=db_scenario.callee,
@@ -414,6 +414,12 @@ systemctl --user status fastapi_app.service
 Tu devrais enfin voir :
 
 active (running)
+
+
+    database_url: str = "mysql+pymysql://{{BDD_USER}}:{{BDD_PASSWORD}}@{{BDD_DNS}}:15100/asterisk"
+    ari_url: str = "http://{{IP_ASTERISK}}:8088/ari"
+    ari_user: str = "{{ARI_USER}}"
+    ari_password: str = "{{ARI_PASSWORD}}"
 
 
 
