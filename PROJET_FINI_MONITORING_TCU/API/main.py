@@ -197,6 +197,18 @@ def get_effective_call_status(call: Call) -> Optional[str]:
     return "success" if int(call.hangup_cause) == 16 else "failed"
 
 
+def is_answered_call(call: Call) -> bool:
+    if call.hangup_cause is not None:
+        return int(call.hangup_cause) == 16
+    return call.status == "success"
+
+
+def get_effective_vosk_status(call: Call) -> Optional[str]:
+    if not is_answered_call(call):
+        return None
+    return call.vosk_status
+
+
 def get_call_error_display(call: Call) -> Optional[str]:
     if call.error_message:
         return call.error_message
@@ -232,6 +244,7 @@ def apply_effective_status_filter(query, status: Optional[str]):
 def serialize_call(call: Call) -> dict:
     effective_status = get_effective_call_status(call)
     error_display = get_call_error_display(call)
+    effective_vosk_status = get_effective_vosk_status(call)
     return {
         "id": call.id,
         "endpoint": call.endpoint,
@@ -257,9 +270,10 @@ def serialize_call(call: Call) -> dict:
         "keyword_expected": call.keyword_expected,
         "keyword_detected": call.keyword_detected,
         "keyword_status": call.keyword_status,
-        "vosk_status": call.vosk_status,
-        "transcription": call.transcription,
-        "vosk_transcription": call.transcription,
+        "vosk_status": effective_vosk_status,
+        "raw_vosk_status": call.vosk_status,
+        "transcription": call.transcription if effective_vosk_status else None,
+        "vosk_transcription": call.transcription if effective_vosk_status else None,
         "vosk_result_created_at": call.created_at.isoformat() if call.created_at else None,
         "recording_path": call.recording_path,
         "speech_checked_at": call.speech_checked_at.isoformat() if call.speech_checked_at else None,
@@ -543,7 +557,7 @@ def export_calls_history(
             "hangup_cause": call.hangup_cause,
             "hangup_cause_label": get_hangup_cause_label(call.hangup_cause),
             "error_display": get_call_error_display(call),
-            "vosk_status": call.vosk_status,
+            "vosk_status": get_effective_vosk_status(call),
             "created_at": call.created_at.isoformat() if call.created_at else None,
         })
 
@@ -585,7 +599,13 @@ def get_vosk_results(
     if page_size > 100:
         raise HTTPException(status_code=400, detail="page_size ne peut pas depasser 100")
 
-    query = db.query(Call).filter(Call.vosk_status.isnot(None))
+    query = db.query(Call).filter(
+        Call.vosk_status.isnot(None),
+        or_(
+            Call.hangup_cause == 16,
+            and_(Call.hangup_cause.is_(None), Call.status == "success"),
+        ),
+    )
     if vosk_status:
         query = query.filter(func.upper(Call.vosk_status) == vosk_status.strip().upper())
 
@@ -610,7 +630,7 @@ def get_vosk_results(
                 "hangup_cause": row.hangup_cause,
                 "hangup_cause_label": get_hangup_cause_label(row.hangup_cause),
                 "error_display": get_call_error_display(row),
-                "vosk_status": row.vosk_status,
+                "vosk_status": get_effective_vosk_status(row),
                 "transcription": row.transcription,
                 "created_at": row.created_at.isoformat() if row.created_at else None,
             }
