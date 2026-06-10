@@ -391,6 +391,39 @@ select:focus {
   color: #fff0d7;
 }
 
+.keyword-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.keyword-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 180px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  border: 1px solid transparent;
+}
+
+.keyword-check-ok {
+  background: rgba(53, 212, 143, 0.12);
+  border-color: rgba(53, 212, 143, 0.32);
+  color: #dfffee;
+}
+
+.keyword-check-ko {
+  background: rgba(255, 93, 122, 0.12);
+  border-color: rgba(255, 93, 122, 0.32);
+  color: #ffe2e8;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(220px, 1fr));
