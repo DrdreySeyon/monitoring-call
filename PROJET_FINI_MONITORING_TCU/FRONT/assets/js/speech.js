@@ -101,7 +101,10 @@ const SpeechValidation = {
         <td>${Utils.escapeHtml(Utils.formatDateTime(item.created_at))}</td>
         <td>${Utils.escapeHtml(item.call_id ?? "-")}</td>
         <td>${Utils.escapeHtml(item.channel_id || "-")}</td>
-        <td>${this.voskStatusChip(item.vosk_status)}</td>
+        <td>
+          ${this.voskStatusChip(item.vosk_status)}
+          ${this.renderKeywordChecks(item.keyword_checks)}
+        </td>
         <td>${Utils.escapeHtml(this.shorten(item.transcription || "-", 160))}</td>
         <td>
           <div class="row-actions">
@@ -120,6 +123,20 @@ const SpeechValidation = {
     if (normalized === "PENDING") return '<span class="pill pill-inactive">En attente</span>';
     if (status) return `<span class="pill pill-inactive">${Utils.escapeHtml(status)}</span>`;
     return '<span class="pill pill-inactive">-</span>';
+  },
+
+  renderKeywordChecks(checks) {
+    if (!Array.isArray(checks) || !checks.length) return "";
+
+    return `
+      <div class="keyword-checks">
+        ${checks.map((item) => `
+          <span class="keyword-check ${item.found ? "keyword-check-ok" : "keyword-check-ko"}">
+            ${Utils.escapeHtml(item.keyword || "-")} ${item.found ? "OK" : "KO"}
+          </span>
+        `).join("")}
+      </div>
+    `;
   },
 
   async copyTranscription(id) {

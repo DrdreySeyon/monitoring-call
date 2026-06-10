@@ -188,7 +188,10 @@ const History = {
         <td>${Utils.formatDuration(item.call_time_s)}</td>
         <td>${Utils.formatDuration(item.duration)}</td>
         <td>${Utils.getDtmfChip(item.dtmf, item.time_s_before_dtmf, item.time_ms_between_dtmf)}</td>
-        <td>${this.getVoskStatusChip(item.vosk_status)}</td>
+        <td>
+          ${this.getVoskStatusChip(item.vosk_status)}
+          ${this.renderKeywordChecks(item.keyword_checks)}
+        </td>
         <td>${Utils.getStatusChip(item.status)}</td>
         <td>${Utils.escapeHtml(item.error_display || item.error_message || "-")}</td>
         <td>
@@ -228,6 +231,20 @@ const History = {
     if (normalized === "PENDING") return '<span class="pill pill-inactive">En attente</span>';
     if (status) return `<span class="pill pill-inactive">${Utils.escapeHtml(status)}</span>`;
     return '<span class="pill pill-inactive">-</span>';
+  },
+
+  renderKeywordChecks(checks) {
+    if (!Array.isArray(checks) || !checks.length) return "";
+
+    return `
+      <div class="keyword-checks">
+        ${checks.map((item) => `
+          <span class="keyword-check ${item.found ? "keyword-check-ok" : "keyword-check-ko"}">
+            ${Utils.escapeHtml(item.keyword || "-")} ${item.found ? "OK" : "KO"}
+          </span>
+        `).join("")}
+      </div>
+    `;
   },
 
   shortenText(text, maxLength = 80) {
