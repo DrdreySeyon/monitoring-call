@@ -101,11 +101,18 @@ def build_ari_variables(
     call_time_s: int = 30,
     dtmf: Optional[str] = None,
     time_s_before_dtmf: Optional[int] = None,
-    time_ms_between_dtmf: Optional[int] = None
+    time_ms_between_dtmf: Optional[int] = None,
+    keyword: Optional[str] = None
 ) -> Dict[str, str]:
     variables = {
         "call_time_s": str(call_time_s)
     }
+
+    if keyword and keyword.strip():
+        cleaned_keyword = keyword.strip()
+        variables.update({
+            "keyword": cleaned_keyword
+        })
 
     if dtmf and dtmf.strip():
         variables.update({
@@ -137,7 +144,8 @@ def perform_call(
         call_time_s=call_time_s,
         dtmf=dtmf,
         time_s_before_dtmf=time_s_before_dtmf,
-        time_ms_between_dtmf=time_ms_between_dtmf
+        time_ms_between_dtmf=time_ms_between_dtmf,
+        keyword=scenario_keyword
     )
 
     payload = {
@@ -170,7 +178,9 @@ def perform_call(
             scenario_id=scenario_id,
             scenario_name=scenario_name,
             scenario_keyword=scenario_keyword,
-            scenario_category=scenario_category
+            scenario_category=scenario_category,
+            keyword_expected=scenario_keyword,
+            keyword_status="pending" if scenario_keyword else None
         )
         db.add(call_row)
         db.commit()
