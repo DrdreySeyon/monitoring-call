@@ -3,6 +3,8 @@ import traceback
 from datetime import datetime
 from typing import Optional
 import json
+import re
+import unicodedata
 
 from fastapi import FastAPI, HTTPException, Depends, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -197,15 +199,57 @@ def get_effective_call_status(call: Call) -> Optional[str]:
     return "success" if int(call.hangup_cause) == 16 else "failed"
 
 
-def is_answered_call(call: Call) -> bool:
-    if call.hangup_cause is not None:
-        return int(call.hangup_cause) == 16
-    return call.status == "success"
+KEYWORD_SEPARATOR_RE = re.compile(r"[;,|\r\n]+")
+
+
+def normalize_keyword_text(value: Optional[str]) -> str:
+    if not value:
+        return ""
+    normalized = unicodedata.normalize("NFKD", value.strip().lower())
+    without_accents = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    return " ".join(without_accents.split())
+
+
+def split_expected_keywords(value: Optional[str]) -> list[str]:
+    if not value:
+        return []
+    keywords = []
+    seen = set()
+    for raw_keyword in KEYWORD_SEPARATOR_RE.split(value):
+        keyword = raw_keyword.strip()
+        normalized = normalize_keyword_text(keyword)
+        if keyword and normalized not in seen:
+            keywords.append(keyword)
+            seen.add(normalized)
+    return keywords
+
+
+def get_call_expected_keywords(call: Call) -> list[str]:
+    return split_expected_keywords(call.keyword_expected or call.scenario_keyword)
+
+
+def get_keyword_checks(call: Call) -> list[dict]:
+    expected_keywords = get_call_expected_keywords(call)
+    if not expected_keywords:
+        return []
+
+    normalized_transcription = normalize_keyword_text(call.transcription)
+    checks = []
+    for keyword in expected_keywords:
+        normalized_keyword = normalize_keyword_text(keyword)
+        found = bool(normalized_keyword and normalized_keyword in normalized_transcription)
+        checks.append({
+            "keyword": keyword,
+            "status": "OK" if found else "KO",
+            "found": found,
+        })
+    return checks
 
 
 def get_effective_vosk_status(call: Call) -> Optional[str]:
-    if not is_answered_call(call):
-        return None
+    keyword_checks = get_keyword_checks(call)
+    if keyword_checks:
+        return "OK" if all(item["found"] for item in keyword_checks) else "KO"
     return call.vosk_status
 
 
@@ -245,6 +289,7 @@ def serialize_call(call: Call) -> dict:
     effective_status = get_effective_call_status(call)
     error_display = get_call_error_display(call)
     effective_vosk_status = get_effective_vosk_status(call)
+    keyword_checks = get_keyword_checks(call)
     return {
         "id": call.id,
         "endpoint": call.endpoint,
@@ -272,8 +317,9 @@ def serialize_call(call: Call) -> dict:
         "keyword_status": call.keyword_status,
         "vosk_status": effective_vosk_status,
         "raw_vosk_status": call.vosk_status,
-        "transcription": call.transcription if effective_vosk_status else None,
-        "vosk_transcription": call.transcription if effective_vosk_status else None,
+        "transcription": call.transcription,
+        "vosk_transcription": call.transcription,
+        "keyword_checks": keyword_checks,
         "vosk_result_created_at": call.created_at.isoformat() if call.created_at else None,
         "recording_path": call.recording_path,
         "speech_checked_at": call.speech_checked_at.isoformat() if call.speech_checked_at else None,
@@ -600,22 +646,31 @@ def get_vosk_results(
         raise HTTPException(status_code=400, detail="page_size ne peut pas depasser 100")
 
     query = db.query(Call).filter(
-        Call.vosk_status.isnot(None),
         or_(
-            Call.hangup_cause == 16,
-            and_(Call.hangup_cause.is_(None), Call.status == "success"),
-        ),
+            Call.vosk_status.isnot(None),
+            and_(
+                Call.transcription.isnot(None),
+                or_(
+                    and_(Call.keyword_expected.isnot(None), Call.keyword_expected != ""),
+                    and_(Call.scenario_keyword.isnot(None), Call.scenario_keyword != ""),
+                ),
+            ),
+        )
     )
-    if vosk_status:
-        query = query.filter(func.upper(Call.vosk_status) == vosk_status.strip().upper())
 
-    total = query.count()
     rows = (
         query.order_by(Call.created_at.desc(), Call.id.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
         .all()
     )
+    if vosk_status:
+        requested_status = vosk_status.strip().upper()
+        rows = [
+            row for row in rows
+            if (get_effective_vosk_status(row) or "").strip().upper() == requested_status
+        ]
+
+    total = len(rows)
+    page_rows = rows[(page - 1) * page_size:page * page_size]
 
     return {
         "page": page,
@@ -631,10 +686,12 @@ def get_vosk_results(
                 "hangup_cause_label": get_hangup_cause_label(row.hangup_cause),
                 "error_display": get_call_error_display(row),
                 "vosk_status": get_effective_vosk_status(row),
+                "raw_vosk_status": row.vosk_status,
                 "transcription": row.transcription,
+                "keyword_checks": get_keyword_checks(row),
                 "created_at": row.created_at.isoformat() if row.created_at else None,
             }
-            for row in rows
+            for row in page_rows
         ],
     }
 
