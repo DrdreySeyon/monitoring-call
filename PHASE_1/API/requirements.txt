@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlalchemy
+pymysql
+pydantic>=2
+pydantic-settings
+python-dotenv
+python-multipart
+apscheduler
+requests
+panoramisk
