@@ -26,11 +26,15 @@ function bindScenarioForm() {
       resetScenarioForm();
       setFormMessage(payload.id ? `Scenario "${created.name || payload.name}" modifie avec succes.` : `Scenario "${created.name || payload.name}" cree avec succes.`, "ok");
     } catch (error) {
+      if (payload.id) {
+        setFormMessage(`Scenario "${payload.name}" non modifie: ${error.message || "erreur technique"}.`, "warn");
+        return;
+      }
       const created = payload.id ? { ...payload, id: Number(payload.id) || payload.id } : { ...payload, id: Date.now(), created_at: new Date().toISOString() };
       state.scenarios = [created, ...state.scenarios.filter((scenario) => String(scenario.id) !== String(created.id))];
       renderScenarios();
       resetScenarioForm();
-      setFormMessage(payload.id ? `Scenario "${created.name || payload.name}" modifie.` : `Scenario "${created.name || payload.name}" ajoute.`, "warn");
+      setFormMessage(`Scenario "${created.name || payload.name}" ajoute.`, "warn");
     }
   });
 
